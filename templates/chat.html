@@ -3,7 +3,7 @@
 {% block content %}
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
-      <li class="breadcrumb-item active" aria-current="page"><a href="{% url 'chats' %}">Назад к постам</a></li>
+      <li class="breadcrumb-item active" aria-current="page"><a href="{% url 'chats' %}">Назад к списку чатов</a></li>
   </ol>
 </nav>
     <hr>
@@ -13,21 +13,21 @@
     <hr>
     <p><strong>Сообщения</strong>: <span class="badge rounded-pill bg-dark">{{ post.comments.count }}</span></p>
     <br>
-    <div class="row">
+    <div class="row" id="messages-list">
         {% for message in chat.messages.all %}
             <div class="col-md-12 mt-3 mb-3">
-                <p><strong>{{ message.author.username }}</strong> | <small>опубликовано:{{ comment.date|date:"Y-m-d" }}</small></p>
+                <p><strong>{{ message.author.username }}</strong> | <small>{{ message.pub_date|date:"Y-m-d H:i" }}</small></p>
                 <p>{{ message.text }}</p>
             </div>
         {% endfor %}
     </div>
     <hr>
     {% if request.user.is_authenticated %}
-    <form action="{% url 'chats' %}" method="POST">
+    <form action="{% url 'message_create'  content_type='post' object_id=chat.id %}" method="POST">
         {% csrf_token %}
         {{ form|crispy }}
         <br>
-    <input class="btn btn-primary" type="submit" value="Отправить">
+    <input class="btn btn-primary" type="submit" id="send-message" value="Отправить">
     </form>
     {% else %}
         <p class="text-center">Оставлять комментарии могут только авторизованные пользователи</p>
@@ -35,29 +35,29 @@
 {% endblock content %}
 {% block js %}
 <script>
-    const chatsSocket = new WebSocket(
+    const messagesSocket = new WebSocket(
         'ws://'
         + window.location.host
         + '/chats/'
         + "{{ chat.id }}"
         + '/'
     );
-    chatSocket.onmessage = function(e) {
+    messagesSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        chatsList = document.getElementById('chats-list')
-        chatsList.insertAdjacentHTML(
+        messagesList = document.getElementById('messages-list')
+        messagesList.insertAdjacentHTML(
             'beforeend',
             '<div class="col-md-12 mt-3 mb-3">\n' +
-            '<p><strong>' + data['message']['author'] + '</strong> | <small>опубликовано:' + data['message']['created_at'] + '</small></p>\n' +
+            '<p><strong>' + data['message']['author'] + '</strong> | <small>' + data['message']['pub_date'] + '</small></p>\n' +
             '<p>' + data['message']['text'] + '</p>\n' +
             '</div>'
         )
     };
-    document.querySelector('#send-comment').onclick = function(e) {
+    document.querySelector('#send-message').onclick = function(e) {
         e.preventDefault()
         const messageInputDom = document.querySelector('#id_text');
         const text = messageInputDom.value;
-        chatsSocket.send(JSON.stringify({
+        messagesSocket.send(JSON.stringify({
             'text': text
         }));
         messageInputDom.value = '';
