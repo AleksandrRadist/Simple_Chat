@@ -1,0 +1,67 @@
+{% extends 'chats.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page"><a href="{% url 'chats' %}">Назад к постам</a></li>
+  </ol>
+</nav>
+    <hr>
+    <h4 class="text-center">{{ chat.name }}</h4>
+    <small>Чат был создан {{ chat.creation_date|date:"Y-m-d" }}</small>
+    <br><br>
+    <hr>
+    <p><strong>Сообщения</strong>: <span class="badge rounded-pill bg-dark">{{ post.comments.count }}</span></p>
+    <br>
+    <div class="row">
+        {% for message in chat.messages.all %}
+            <div class="col-md-12 mt-3 mb-3">
+                <p><strong>{{ message.author.username }}</strong> | <small>опубликовано:{{ comment.date|date:"Y-m-d" }}</small></p>
+                <p>{{ message.text }}</p>
+            </div>
+        {% endfor %}
+    </div>
+    <hr>
+    {% if request.user.is_authenticated %}
+    <form action="{% url 'chats' %}" method="POST">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <br>
+    <input class="btn btn-primary" type="submit" value="Отправить">
+    </form>
+    {% else %}
+        <p class="text-center">Оставлять комментарии могут только авторизованные пользователи</p>
+    {% endif %}
+{% endblock content %}
+{% block js %}
+<script>
+    const chatsSocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/chats/'
+        + "{{ chat.id }}"
+        + '/'
+    );
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        chatsList = document.getElementById('chats-list')
+        chatsList.insertAdjacentHTML(
+            'beforeend',
+            '<div class="col-md-12 mt-3 mb-3">\n' +
+            '<p><strong>' + data['message']['author'] + '</strong> | <small>опубликовано:' + data['message']['created_at'] + '</small></p>\n' +
+            '<p>' + data['message']['text'] + '</p>\n' +
+            '</div>'
+        )
+    };
+    document.querySelector('#send-comment').onclick = function(e) {
+        e.preventDefault()
+        const messageInputDom = document.querySelector('#id_text');
+        const text = messageInputDom.value;
+        chatsSocket.send(JSON.stringify({
+            'text': text
+        }));
+        messageInputDom.value = '';
+    };
+</script>
+{% endblock js %}
+
