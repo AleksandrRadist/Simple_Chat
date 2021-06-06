@@ -6,7 +6,7 @@ from .models import Message
 
 @shared_task
 def delete_old_messages():
-    d = datetime.today() - timedelta(hours=0, minutes=1)
+    d = datetime.today() - timedelta(hours=0, minutes=30)
     messages = Message.objects.filter(pub_date__lte=d)
     count = messages.count()
     messages.delete()

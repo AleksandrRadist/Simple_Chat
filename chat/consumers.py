@@ -30,9 +30,9 @@ class ChatsConsumer(AsyncWebsocketConsumer):
 
     # Receive message from WebSocket
     async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json['text']
-        new_message = await self.create_new_message(message)
+        data_json = json.loads(text_data)
+        text = data_json['text']
+        new_message = await self.create_new_message(text)
         data = {'author': new_message.author.username,
                 'pub_date': new_message.pub_date.strftime('%Y-%m-%d %H:%m'),
                 'text': new_message.text}

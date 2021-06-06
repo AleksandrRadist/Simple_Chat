@@ -23,7 +23,7 @@
     </div>
     <hr>
     {% if request.user.is_authenticated %}
-    <form action="{% url 'message_create'  content_type='post' object_id=chat.id %}" method="POST">
+    <form action="{% url 'message_create' object_id=chat.id %}" method="POST">
         {% csrf_token %}
         {{ form|crispy }}
         <br>
